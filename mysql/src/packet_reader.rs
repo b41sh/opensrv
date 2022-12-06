@@ -126,7 +126,7 @@ impl<R: AsyncRead + Unpin> PacketReader<R> {
     pub async fn next_async(&mut self) -> io::Result<Option<(u8, Packet<'_>)>> {
         self.start = self.bytes.len() - self.remaining;
 
-        let mut buffer_size = PACKET_BUFFER_SIZE;
+        let buffer_size = PACKET_LARGE_BUFFER_SIZE;
         loop {
             if self.remaining != 0 {
                 let bytes = {
@@ -168,8 +168,6 @@ impl<R: AsyncRead + Unpin> PacketReader<R> {
                 self.r.read(buf).await?
             };
             self.remaining = end + read;
-            // use a larger buffer size to reduce bytes resize times.
-            buffer_size = PACKET_LARGE_BUFFER_SIZE;
 
             if read == 0 {
                 self.bytes.truncate(self.remaining);
