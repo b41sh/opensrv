@@ -19,7 +19,7 @@ use tokio::io::AsyncRead;
 use tokio::io::AsyncReadExt;
 
 const PACKET_BUFFER_SIZE: usize = 4_096;
-const PACKET_LARGE_BUFFER_SIZE: usize = 1_048_576;
+const PACKET_LARGE_BUFFER_SIZE: usize = 1_052_672;
 
 pub struct PacketReader<R> {
     bytes: Vec<u8>,
@@ -127,7 +127,6 @@ impl<R: AsyncRead + Unpin> PacketReader<R> {
         self.start = self.bytes.len() - self.remaining;
 
         let mut i = 0;
-        let mut buffer_size = PACKET_BUFFER_SIZE;
         loop {
             if self.remaining != 0 {
                 let bytes = {
@@ -161,8 +160,8 @@ impl<R: AsyncRead + Unpin> PacketReader<R> {
             let end = self.remaining;
 
             println!("i={}", i);
-            if self.bytes.len() - end < buffer_size {
-                let new_len = std::cmp::max(buffer_size, end * 2);
+            if self.bytes.len() - end <= PACKET_BUFFER_SIZE {
+                let new_len = std::cmp::max(PACKET_LARGE_BUFFER_SIZE, end * 2);
                 println!("----resize old_len={}, new_len={}", self.bytes.len(), new_len);
                 self.bytes.resize(new_len, 0);
             }
@@ -171,7 +170,6 @@ impl<R: AsyncRead + Unpin> PacketReader<R> {
                 self.r.read(buf).await?
             };
             self.remaining = end + read;
-            buffer_size = PACKET_LARGE_BUFFER_SIZE;
             i+= 1;
 
             if read == 0 {
